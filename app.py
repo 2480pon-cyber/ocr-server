@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
-import pytesseract
 from PIL import Image
-import io
+import pytesseract
 
 app = Flask(__name__)
 
@@ -16,8 +15,11 @@ def ocr():
 
     file = request.files["file"]
 
-    img = Image.open(io.BytesIO(file.read()))
-    text = pytesseract.image_to_string(img, lang="jpn")
+    # ここが重要
+    image = Image.open(file.stream)
+
+    # OCR実行（日本語）
+    text = pytesseract.image_to_string(image, lang="jpn")
 
     return jsonify({
         "text": text
