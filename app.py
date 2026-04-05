@@ -1,29 +1,22 @@
-from flask import Flask, request, jsonify
-from PIL import Image
-import pytesseract
-
-app = Flask(__name__)
-
-@app.route("/")
-def home():
-    return "OK"
+import re
 
 @app.route("/ocr", methods=["POST"])
 def ocr():
-    if "file" not in request.files:
-        return "No file", 400
+    file = request.files.get("file")
+    if not file:
+        return {"error": "No file"}
 
-    file = request.files["file"]
-
-    # ここが重要
     image = Image.open(file.stream)
-
-    # OCR実行（日本語）
     text = pytesseract.image_to_string(image, lang="jpn")
 
-    return jsonify({
-        "text": text
-    })
+    # 改行を統一
+    text = text.replace("\r", "")
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    # 防衛〜キロまでを抽出（複数対応）
+    pattern = r"防衛[\s\S]*?キロ"
+    matches = re.findall(pattern, text)
+
+    return {
+        "raw": text,
+        "blocks": matches
+    }
